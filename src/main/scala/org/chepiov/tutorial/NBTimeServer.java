@@ -1,4 +1,4 @@
-package org.chepiov;
+package org.chepiov.tutorial;
 
 import java.io.PrintWriter;
 import java.net.InetAddress;

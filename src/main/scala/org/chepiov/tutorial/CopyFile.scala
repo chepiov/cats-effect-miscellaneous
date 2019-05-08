@@ -1,4 +1,4 @@
-package org.chepiov
+package org.chepiov.tutorial
 
 import java.io.{File, _}
 import java.nio.file.Files

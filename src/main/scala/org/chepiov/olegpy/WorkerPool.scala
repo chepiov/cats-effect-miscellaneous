@@ -1,10 +1,15 @@
-package org.chepiov
+package org.chepiov.olegpy
 
 import cats.effect._
 import cats.effect.concurrent.{MVar, Ref}
 import cats.effect.syntax.bracket._
 import cats.effect.syntax.concurrent._
-import cats.implicits._
+import cats.instances.list._
+import cats.syntax.flatMap._
+import cats.syntax.foldable._
+import cats.syntax.functor._
+import cats.syntax.parallel._
+import cats.syntax.traverse._
 
 import scala.concurrent.duration._
 import scala.util.Random
@@ -63,7 +68,7 @@ object WorkerPool extends IOApp {
           def add(worker: Worker[F, A, B]): F[Unit] =
             version.get >>= (v => current.put(v, worker).start.void)
 
-          def back(workerVersion: Long, worker: Worker[F, A, B]): F[Unit] =
+          private def back(workerVersion: Long, worker: Worker[F, A, B]): F[Unit] =
             current.put(workerVersion, worker).start.void
         }
         _ <- fs.traverse_(pool.add)
@@ -81,8 +86,8 @@ object WorkerPool extends IOApp {
 
   override def run(args: List[String]): IO[ExitCode] =
     for {
-      pool     <- testPool
-      _        <- List.range(0, 100).parTraverse(pool.exec)
+      pool <- testPool
+      _    <- List.range(0, 100).parTraverse(pool.exec)
       //unitPool <- WorkerPool.of[IO, Unit, Unit](List(_ => IO.sleep(2.seconds)))
       //_        <- unitPool.exec(()).start
       //_        <- unitPool.removeAll

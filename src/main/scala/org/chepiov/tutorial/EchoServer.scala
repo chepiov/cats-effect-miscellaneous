@@ -1,4 +1,4 @@
-package org.chepiov
+package org.chepiov.tutorial
 
 import java.io._
 import java.net._

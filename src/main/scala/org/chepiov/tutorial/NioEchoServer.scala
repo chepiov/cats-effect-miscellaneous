@@ -1,4 +1,4 @@
-package org.chepiov
+package org.chepiov.tutorial
 
 import java.io.{BufferedReader, BufferedWriter, InputStreamReader, PrintWriter}
 import java.net.{InetSocketAddress, Socket}
