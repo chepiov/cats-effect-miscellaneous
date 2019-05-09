@@ -4,6 +4,36 @@
 * Solutions for [Cats Effect Scala exercises](https://olegpy.com/cats-effect-exercises/)
 
 ***
+### [Copy file](src/main/scala/org/chepiov/tutorial/CopyFile.scala) 
+[Original description](https://typelevel.org/cats-effect/tutorial/tutorial.html#exercises-improving-our-small-io-program)
+
+#### Objective
+To finalize we propose you some exercises that will help you to keep improving your IO-kungfu.
+
+#### Requirements
+* Modify the IOApp so it shows an error and abort the execution if the origin and destination files are the same, the origin file cannot be open for reading or the destination file cannot be opened for writing. Also, if the destination file already exists, the program should ask for confirmation before overwriting that file.
+* Modify transmit so the buffer size is not hardcoded but passed as parameter.
+* Use some other concurrency tool of cats-effect instead of semaphore to ensure mutual exclusion of transfer execution and streams closing.
+* Create a new program able to copy folders. If the origin folder has subfolders, then their contents must be recursively copied too. Of course the copying must be safely cancelable at any moment.
+
+***
+### Echo server ([NioEchoServer](src/main/scala/org/chepiov/tutorial/NioEchoServer.scala), [AioEchoServer](src/main/scala/org/chepiov/tutorial/AioEchoServer.scala))
+[Original description](https://typelevel.org/cats-effect/tutorial/tutorial.html#conclusion)
+
+#### Objective
+So, let’s say our new goal is to create an echo server that does not require a thread per connected socket 
+to wait on the blocking read() method. If we use a network library that avoids blocking operations, 
+we could then combine that with async to create such non-blocking server. And Java NIO can be helpful here. 
+While Java NIO does have some blocking method (Selector’s select()), it allows to build servers that do 
+not require a thread per connected client: select() will return those ‘channels’ (such as SocketChannel) 
+that have data available to read from, then processing of the incoming data can be split among threads of 
+a size-bounded pool. This way, a thread-per-client approach is not needed. Java NIO2 or netty could also 
+be applicable to this scenario. We leave as a final exercise to implement again our echo server but this 
+time using an async lib.
+
+
+
+***
 ### [Race](src/main/scala/org/chepiov/olegpy/Race.scala) 
 [Original description](https://olegpy.com/cats-effect-exercises/#race-for-success)
 
