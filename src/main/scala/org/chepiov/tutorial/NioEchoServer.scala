@@ -38,7 +38,8 @@ object NioEchoServer extends IOApp {
                     stopFlag.put(()) // Stopping server! Also put(()) returns F[Unit] which is handy as we are done
                   case "" => Sync[F].unit // Empty line, we are done
                   case _ =>
-                    Sync[F].delay { writer.write(line); writer.newLine(); writer.flush() } >> loop(
+                    putStrLn(s"Received line: $line") >>
+                      Sync[F].delay { writer.write(line); writer.newLine(); writer.flush() } >> loop(
                       reader,
                       writer,
                       stopFlag
