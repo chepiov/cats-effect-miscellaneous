@@ -4,6 +4,7 @@ import cats.data._
 import cats.effect._
 import cats.syntax.applicative._
 import cats.syntax.applicativeError._
+import cats.syntax.either._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.option._
@@ -33,12 +34,11 @@ object Race extends IOApp {
 
   // Use this class for reporting all failures.
   case class CompositeException(ex: NonEmptyList[Throwable]) extends Exception("All race candidates have failed") {
-    override def getMessage: String               = ex.toList.map(_.getMessage).mkString("; ")
-    def prepend(e: Throwable): CompositeException = CompositeException(e :: ex)
+    def compose(e: CompositeException): CompositeException = CompositeException(ex concatNel e.ex)
   }
 
   case object CompositeException {
-    def one(ex: Throwable): CompositeException = CompositeException(NonEmptyList.one(ex))
+    def apply(ex: Throwable): CompositeException = CompositeException(NonEmptyList.one(ex))
   }
 
   // Implement this function:
@@ -60,19 +60,19 @@ object Race extends IOApp {
   type Failure[F[_], A] = (Fiber[F, Either[Throwable, A]], CompositeException)
 
   object success {
-    def unapply[F[_], A](attempt: Attempt[F, A]): Option[Success[F, A]] = attempt match {
-      case Left((Right(v), fib))  => (v, fib).some
-      case Right((fib, Right(v))) => (v, fib).some
-      case _                      => none
-    }
+    def unapply[F[_], A](attempt: Attempt[F, A]): Option[Success[F, A]] =
+      attempt.leftMap(_.swap).merge match {
+        case (fib, Right(v)) => (v, fib).some
+        case _               => none
+      }
   }
 
   object failure {
-    def unapply[F[_], A](attempt: Attempt[F, A]): Option[Failure[F, A]] = attempt match {
-      case Left((Left(ea), fib))  => (fib, CompositeException.one(ea)).some
-      case Right((fib, Left(eb))) => (fib, CompositeException.one(eb)).some
-      case _                      => none
-    }
+    def unapply[F[_], A](attempt: Attempt[F, A]): Option[Failure[F, A]] =
+      attempt.leftMap(_.swap).merge match {
+        case (fib, Left(e)) => (fib, CompositeException(e)).some
+        case _              => none
+      }
   }
 
   def cancelAndFinish[F[_]: Functor, A](v: A, fib: Fiber[F, Either[Throwable, A]]): F[A] =
@@ -80,8 +80,9 @@ object Race extends IOApp {
 
   def composeAndContinue[F[_]: Sync, A](fib: Fiber[F, Either[Throwable, A]], ea: CompositeException): F[A] =
     fib.join >>= {
-      case Left(eb) => Sync[F].raiseError[A](ea.prepend(eb))
-      case Right(v) => v.pure[F]
+      case Left(eb: CompositeException) => Sync[F].raiseError[A](ea.compose(eb))
+      case Left(eb)                     => Sync[F].raiseError[A](ea.compose(CompositeException(eb)))
+      case Right(v)                     => v.pure[F]
     }
 
   // In your IOApp, you can use the following sample method list

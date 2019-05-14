@@ -55,12 +55,16 @@ object WorkerPool extends IOApp {
 
           def exec(a: A): F[B] =
             for {
-              (workerVersion, worker) <- current.take
-              currentVersion          <- version.get
+              currentVersion <- version.get
               // in case of `removeAll` happened here worker will be removed eventually (e.g. next time)
-              b <- if (currentVersion == workerVersion)
-                    worker(a).guarantee(back(workerVersion, worker))
-                  else exec(a)
+              b <- Concurrent[F].uncancelable {
+                    current.take >>= {
+                      case (workerVersion, worker) =>
+                        if (currentVersion == workerVersion)
+                          worker(a).guarantee(back(workerVersion, worker))
+                        else exec(a)
+                    }
+                  }
             } yield b
 
           def removeAll: F[Unit] = version.update(_ + 1L)
